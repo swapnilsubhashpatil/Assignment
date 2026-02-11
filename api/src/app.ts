@@ -2,6 +2,9 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { errorHandler } from "./middleware/error-handler.js";
 import { requestLogger } from "./middleware/logger.js";
+import chatRoutes from "./routes/chat.routes.js";
+import healthRoutes from "./routes/health.routes.js";
+import agentRoutes from "./routes/agent.routes.js";
 
 // Create Hono app
 const app = new Hono();
@@ -14,13 +17,11 @@ app.use(cors({
 }));
 
 // Health check endpoint
-app.get("/health", (c) => {
-  return c.json({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    service: "customer-support-api",
-  });
-});
+app.route("/health", healthRoutes);
+
+// API routes
+app.route("/api/chat", chatRoutes);
+app.route("/api/agents", agentRoutes);
 
 // Apply error handler
 app.onError(errorHandler);
