@@ -12,7 +12,7 @@
     "postinstall": "prisma generate",
     "dev": "npx nitropack dev",
     "build": "npx nitropack build",
-    "start": "node .nitro/index.mjs",
+    "start": "node .output/server/index.mjs",
     "lint": "eslint .",
     "test": "vitest",
     "db:push": "prisma db push",
