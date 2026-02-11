@@ -14,6 +14,11 @@ function AppContent() {
     setRefreshKey((prev) => prev + 1);
   }, []);
 
+  const handleConversationCreated = useCallback((id: string) => {
+    setSelectedConversationId(id);
+    setRefreshKey((prev) => prev + 1);
+  }, []);
+
   return (
     <div className="flex h-screen bg-white overflow-hidden font-mono text-sm">
       <ConversationList
@@ -37,6 +42,7 @@ function AppContent() {
           <ChatWindow
             conversationId={selectedConversationId}
             onNewMessage={handleNewMessage}
+            onConversationCreated={handleConversationCreated}
           />
         </div>
       </div>

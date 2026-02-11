@@ -10,6 +10,7 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "test:api": "cd api && npm test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "studio": "cd api && npx prisma studio",
     "workflow": "npx workflow web"

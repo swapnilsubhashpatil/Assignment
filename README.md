@@ -44,7 +44,20 @@ npx prisma db push
 npx tsx prisma/seed.ts
 ```
 
-### 4. Run
+### 4. Run Tests (Optional)
+
+```bash
+cd api
+npm test
+```
+
+Test coverage includes:
+- Router Agent classification
+- Context compaction & token management
+- Tool data isolation security
+- Full API integration
+
+### 5. Run Development Server
 
 ```bash
 npm run dev

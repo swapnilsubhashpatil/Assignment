@@ -27,23 +27,38 @@ const API_URL = "";
 type ChatWindowProps = {
   conversationId: string | null;
   onNewMessage?: () => void;
+  onConversationCreated?: (id: string) => void;
 };
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
   conversationId,
   onNewMessage,
+  onConversationCreated,
 }) => {
   const { currentUser } = useUser();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [thinkingText, setThinkingText] = useState<string>("");
 
+  const [internalConversationId, setInternalConversationId] = useState<string | null>(conversationId);
+  
+  // Sync with prop
+  useEffect(() => {
+    setInternalConversationId(conversationId);
+  }, [conversationId]);
+
   const { messages, isLoading, setMessages, append, data } = useChat({
     api: `${API_URL}/api/chat/messages`,
     body: {
-      conversationId,
+      conversationId: internalConversationId,
       userId: currentUser.id,
     },
-    onResponse: () => {
+    onResponse: (response) => {
+      // Capture conversation ID from header for new conversations
+      const newConvId = response.headers.get("X-Conversation-Id");
+      if (newConvId && !internalConversationId) {
+        setInternalConversationId(newConvId);
+        onConversationCreated?.(newConvId);
+      }
       onNewMessage?.();
     },
     onFinish: () => {
@@ -72,10 +87,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [messages, isLoading, thinkingText]);
 
   useEffect(() => {
-    if (conversationId) {
+    if (internalConversationId) {
       (client as HonoClient).api.chat.conversations[":id"]
         .$get({
-          param: { id: conversationId },
+          param: { id: internalConversationId },
           query: { userId: currentUser.id },
         })
         .then(async (res: Response) => {
@@ -100,7 +115,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       setMessages([]);
       setThinkingText("");
     };
-  }, [conversationId, setMessages]);
+  }, [internalConversationId, setMessages]);
 
   const lastMessage =
     messages.length > 0 ? messages[messages.length - 1] : null;

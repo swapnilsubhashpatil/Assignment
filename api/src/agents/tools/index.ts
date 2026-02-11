@@ -163,43 +163,127 @@ export const createGetInvoiceDetailsTool = (userId: string) => tool({
 });
 
 export const createCheckRefundStatusTool = (userId: string) => tool({
-  description: "Checks status of a refund.",
+  description: "Checks status of refunds by transaction ID, order number, or product name.",
   parameters: z.object({
-    transactionId: z.string().describe("The transaction ID to check for refunds"),
+    transactionId: z.string().optional().describe("Optional transaction ID to check"),
+    orderNumber: z.string().optional().describe("Optional order number to check for refunds"),
+    productName: z.string().optional().describe("Optional product name to search for refunds"),
   }),
-  execute: async ({ transactionId }) => {
-    const payment = await prisma.payment.findFirst({
-      where: {
-        transactionId,
-        user: {
-          userId: userId // Using the User relation
-        }
-      },
-      include: {
-        refunds: true,
-        order: {
-          select: { orderNumber: true },
+  execute: async ({ transactionId, orderNumber, productName }) => {
+    // If transactionId provided, look up directly
+    if (transactionId) {
+      const payment = await prisma.payment.findFirst({
+        where: {
+          transactionId,
+          user: { userId }
         },
-        user: {
-          select: { name: true }
-        }
-      },
-    });
+        include: {
+          refunds: true,
+          order: { select: { orderNumber: true } },
+          user: { select: { name: true } }
+        },
+      });
 
-    if (!payment) {
-      return { error: "Transaction not found or you don't have permission to view it" };
+      if (!payment) {
+        return { error: "Transaction not found" };
+      }
+
+      return formatRefundResponse(payment);
     }
 
-    return payment.refunds.length > 0
-      ? {
-        customerName: payment.user.name,
-        orderNumber: payment.order.orderNumber,
-        refunds: payment.refunds,
+    // If orderNumber provided, find payment via order
+    if (orderNumber) {
+      const payment = await prisma.payment.findFirst({
+        where: {
+          order: { orderNumber },
+          user: { userId }
+        },
+        include: {
+          refunds: true,
+          order: { select: { orderNumber: true } },
+          user: { select: { name: true } }
+        },
+      });
+
+      if (!payment) {
+        return { error: "No payment found for this order" };
       }
-      : {
-        customerName: payment.user.name,
-        orderNumber: payment.order.orderNumber,
-        message: "No refunds found for this transaction",
-      };
+
+      return formatRefundResponse(payment);
+    }
+
+    // If productName provided, search through orders
+    if (productName) {
+      const payments = await prisma.payment.findMany({
+        where: { user: { userId } },
+        include: {
+          refunds: true,
+          order: { select: { orderNumber: true, items: true } },
+          user: { select: { name: true } }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      });
+
+      // Find payment with matching product in items
+      const matchingPayment = payments.find(p => {
+        const items = JSON.parse(p.order.items || "[]");
+        return items.some((item: any) => 
+          item.name?.toLowerCase().includes(productName.toLowerCase())
+        );
+      });
+
+      if (!matchingPayment) {
+        return { error: `No orders found containing "${productName}"` };
+      }
+
+      return formatRefundResponse(matchingPayment);
+    }
+
+    // No parameters - get all recent refunds
+    const payments = await prisma.payment.findMany({
+      where: { user: { userId } },
+      include: {
+        refunds: true,
+        order: { select: { orderNumber: true } },
+        user: { select: { name: true } }
+      },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    });
+
+    const refunds = payments.flatMap(p => 
+      p.refunds.map(r => ({
+        ...r,
+        orderNumber: p.order.orderNumber,
+        transactionId: p.transactionId,
+      }))
+    );
+
+    return refunds.length > 0 
+      ? { refunds: refunds.slice(0, 5) }
+      : { message: "No refunds found" };
   },
 });
+
+function formatRefundResponse(payment: any) {
+  return payment.refunds.length > 0
+    ? {
+      customerName: payment.user.name,
+      orderNumber: payment.order.orderNumber,
+      transactionId: payment.transactionId,
+      refunds: payment.refunds.map((r: any) => ({
+        amount: r.amount,
+        status: r.status,
+        reason: r.reason,
+        createdAt: r.createdAt,
+        processedAt: r.processedAt,
+      })),
+    }
+    : {
+      customerName: payment.user.name,
+      orderNumber: payment.order.orderNumber,
+      transactionId: payment.transactionId,
+      message: "No refunds found for this transaction",
+    };
+}

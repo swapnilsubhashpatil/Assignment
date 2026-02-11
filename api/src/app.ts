@@ -17,7 +17,7 @@ app.use(
     origin: "*",
     allowHeaders: ["Content-Type", "Authorization"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    exposeHeaders: ["X-Agent-Type", "X-Reasoning"],
+    exposeHeaders: ["X-Agent-Type", "X-Reasoning", "X-Conversation-Id"],
     maxAge: 600,
   }),
 );

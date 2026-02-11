@@ -90,6 +90,7 @@ export const chatController = {
 
     response.headers.set("X-Agent-Type", agent);
     response.headers.set("X-Reasoning", reasoning.replace(/\n/g, " "));
+    response.headers.set("X-Conversation-Id", currentConversationId!);
 
     start(postChatProcessing, [currentConversationId!, agent, userId]).catch(() => {});
 
