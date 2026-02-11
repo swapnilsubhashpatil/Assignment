@@ -1,5 +1,7 @@
+import { client } from "../../lib/api";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-import type { HonoClient } from "../../lib/api";
+type HonoClient = any;
 import React, { useEffect, useRef, useState } from "react";
 import { useChat } from "ai/react";
 
@@ -7,7 +9,6 @@ import { MessageBubble } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
 import { useUser } from "../../contexts/UserContext";
 import { ThinkingLoader } from "./ThinkingLoader";
-import { client } from "../../lib/api";
 
 type ConversationMessage = {
   id: string;

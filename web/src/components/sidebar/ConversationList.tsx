@@ -5,146 +5,81 @@ import { useUser } from "../../contexts/UserContext";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type HonoClient = any;
 
-interface Conversation {
+type Conversation = {
   id: string;
-  title: string;
+  title: string | null;
   updatedAt: string;
-  agentType: string | null;
-}
+};
 
-interface ConversationListProps {
-  selectedId: string;
-  onSelect: (id: string | null) => void;
+export const ConversationList: React.FC<{
+  onSelect: (id: string) => void;
+  selectedId?: string;
   refreshKey?: number;
-}
-
-export const ConversationList: React.FC<ConversationListProps> = ({
-  selectedId,
-  onSelect,
-  refreshKey = 0,
-}) => {
+}> = ({ onSelect, selectedId, refreshKey }) => {
   const { currentUser } = useUser();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
-    (client as HonoClient).api.chat.conversations
-      .$get({ query: { userId: currentUser.id } })
-      .then(async (res: Response) => {
+    async function load() {
+      try {
+        const res = await (client as HonoClient).api.chat.conversations.$get({
+          query: { userId: currentUser.id },
+        });
         if (res.ok) {
-          const data = await res.json();
-          if (data && typeof data === "object" && "conversations" in data) {
-            setConversations(
-              (data.conversations as Conversation[]).sort(
-                (a, b) =>
-                  new Date(b.updatedAt).getTime() -
-                  new Date(a.updatedAt).getTime(),
-              ),
-            );
-          }
+          const data = (await res.json()) as { conversations: Conversation[] };
+          setConversations(data.conversations);
         }
-      })
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
-  }, [currentUser.id, refreshKey]);
-
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    if (!confirm("Delete this conversation?")) return;
-
-    try {
-      const res = await (client as HonoClient).api.chat.conversations[":id"].$delete({
-        param: { id },
-        query: { userId: currentUser.id },
-      });
-      if (res.ok) {
-        setConversations((prev) => prev.filter((c) => c.id !== id));
-        if (selectedId === id) {
-          onSelect(null);
-        }
-      }
-    } catch {
-      // Silently handle error
+      } catch {}
     }
-  };
-
-  const getAgentBadge = (agentType: string | null) => {
-    const colors: Record<string, string> = {
-      support: "bg-blue-100 text-blue-800",
-      order: "bg-green-100 text-green-800",
-      billing: "bg-purple-100 text-purple-800",
-    };
-    return (
-      agentType && (
-        <span
-          className={`text-[10px] px-1.5 py-0.5 uppercase ${colors[agentType] || "bg-gray-100"}`}
-        >
-          {agentType}
-        </span>
-      )
-    );
-  };
+    load();
+  }, [refreshKey, currentUser.id]);
 
   return (
-    <div className="w-80 border-r border-black bg-white flex flex-col h-full">
-      <div className="p-4 border-b border-black flex-none">
+    <div className="flex flex-col h-full bg-white border-r border-black w-80">
+      <div className="p-4 border-b border-black flex justify-between items-center bg-white">
+        <h2 className="font-bold text-lg tracking-tight uppercase">Chats</h2>
         <button
-          onClick={() => onSelect(null)}
-          className="w-full px-4 py-3 bg-black text-white hover:bg-[#E16259] transition-colors font-mono text-sm uppercase tracking-wider"
+          onClick={() => onSelect("")}
+          className="px-3 py-1 text-xs font-bold uppercase border border-black hover:bg-black hover:text-white transition-all"
+          title="New Chat"
         >
-          + New Chat
+          New Chat
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {isLoading ? (
-          <div className="p-4 text-center text-gray-400 font-mono text-sm">
-            Loading...
+        {conversations.length === 0 && (
+          <div className="p-4 text-center text-gray-400 text-xs">
+            No conversations yet.
+            <br />
+            Start a new chat!
           </div>
-        ) : conversations.length === 0 ? (
-          <div className="p-4 text-center text-gray-400 font-mono text-sm">
-            No conversations yet
-          </div>
-        ) : (
-          conversations.map((conv) => (
+        )}
+
+        {conversations.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => onSelect(c.id)}
+            className={`w-full text-left px-4 py-4 border-b border-black transition-colors group ${
+              selectedId === c.id
+                ? "bg-[#E16259] text-white"
+                : "hover:bg-black hover:text-white text-black"
+            }`}
+          >
+            <div className={`font-bold truncate uppercase text-xs mb-1`}>
+              {c.title || "UNTITLED CONVERSATION"}
+            </div>
             <div
-              key={conv.id}
-              onClick={() => onSelect(conv.id)}
-              className={`group p-4 border-b border-gray-100 cursor-pointer transition-colors ${
-                selectedId === conv.id
-                  ? "bg-black text-white"
-                  : "hover:bg-gray-50"
+              className={`text-[10px] uppercase tracking-widest ${
+                selectedId === c.id
+                  ? "text-white/80"
+                  : "text-black/40 group-hover:text-white/80"
               }`}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="font-mono text-sm truncate">{conv.title}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    {getAgentBadge(conv.agentType)}
-                    <span
-                      className={`text-xs ${
-                        selectedId === conv.id ? "text-gray-300" : "text-gray-400"
-                      }`}
-                    >
-                      {new Date(conv.updatedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={(e) => handleDelete(e, conv.id)}
-                  className={`opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 text-xs ${
-                    selectedId === conv.id
-                      ? "text-white hover:text-[#E16259]"
-                      : "text-gray-400 hover:text-red-500"
-                  }`}
-                >
-                  ×
-                </button>
-              </div>
+              {new Date(c.updatedAt).toLocaleDateString()}
             </div>
-          ))
-        )}
+          </button>
+        ))}
       </div>
     </div>
   );

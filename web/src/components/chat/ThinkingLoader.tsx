@@ -1,42 +1,27 @@
 import React, { useEffect, useState } from "react";
 
-const THINKING_WORDS = [
-  "Analyzing...",
-  "Processing...",
-  "Thinking...",
-  "Searching...",
-  "Retrieving...",
-  "Computing...",
-];
-
 export const ThinkingLoader: React.FC = () => {
-  const [currentWord, setCurrentWord] = useState(0);
+  const [dots, setDots] = useState("");
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentWord((prev) => (prev + 1) % THINKING_WORDS.length);
-    }, 800);
+      setDots((prev) => {
+        if (prev === "") return ".";
+        if (prev === ".") return "..";
+        if (prev === "..") return "...";
+        return "";
+      });
+    }, 500);
 
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="flex items-center gap-2 text-sm font-mono text-gray-500">
-      <div className="flex gap-1">
-        <span
-          className="w-2 h-2 bg-black animate-bounce"
-          style={{ animationDelay: "0ms" }}
-        />
-        <span
-          className="w-2 h-2 bg-black animate-bounce"
-          style={{ animationDelay: "150ms" }}
-        />
-        <span
-          className="w-2 h-2 bg-black animate-bounce"
-          style={{ animationDelay: "300ms" }}
-        />
-      </div>
-      <span>{THINKING_WORDS[currentWord]}</span>
+    <div className="flex items-center gap-2 text-[#E16259]">
+      <div className="w-2 h-2 rounded-full bg-[#E16259] animate-pulse" />
+      <span className="text-xs uppercase tracking-widest font-bold">
+        Thinking{dots}
+      </span>
     </div>
   );
 };
