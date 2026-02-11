@@ -2,6 +2,14 @@
 
 AI-powered customer support with multi-agent architecture. A router agent classifies queries and delegates to specialized sub-agents (Support, Order, Billing) with database tool access.
 
+## 🌐 Live Demo
+
+| Environment | URL |
+|-------------|-----|
+| **Frontend** | https://customer-support-web.vercel.app |
+| **Backend API** | https://customer-support-api.onrender.com |
+| **Health Check** | https://customer-support-api.onrender.com/api/health |
+
 ## Tech Stack
 
 | Layer    | Tech                          | Purpose                         |
