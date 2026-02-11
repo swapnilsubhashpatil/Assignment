@@ -38,3 +38,6 @@ coverage
 
 # Prisma
 prisma/migrations/
+
+
+api/.workflow-data
