@@ -12,8 +12,11 @@
     "postinstall": "prisma generate",
     "dev": "npx nitropack dev",
     "build": "npx nitropack build",
+    "start": "node .nitro/index.mjs",
     "lint": "eslint .",
-    "test": "vitest"
+    "test": "vitest",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "hono": "^4.0.0",
@@ -34,5 +37,8 @@
     "prisma": "^5.9.1",
     "vitest": "^1.2.2",
     "eslint": "^9.17.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
