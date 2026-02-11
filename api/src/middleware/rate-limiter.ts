@@ -1,63 +1,32 @@
 import type { Context, Next } from "hono";
 
-interface RateLimitEntry {
-  count: number;
-  resetTime: number;
-}
+const RATE_LIMIT_WINDOW = 60 * 1000;
+const MAX_REQUESTS = 100;
 
-const rateLimitStore = new Map<string, RateLimitEntry>();
+const ipRequests = new Map<string, { count: number; startTime: number }>();
 
-// Clean up expired entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (entry.resetTime < now) {
-      rateLimitStore.delete(key);
-    }
-  }
-}, 5 * 60 * 1000);
+export const rateLimiter = async (c: Context, next: Next) => {
+  const ip = c.req.header("x-forwarded-for") || "unknown";
 
-export function rateLimiter(maxRequests: number, windowMs: number) {
-  return async (c: Context, next: Next) => {
-    // Use userId from body or IP as identifier
-    const body = await c.req.json().catch(() => ({}));
-    const identifier = body.userId || c.req.header("x-forwarded-for") || "anonymous";
-    const key = `${c.req.path}:${identifier}`;
-    
-    const now = Date.now();
-    const entry = rateLimitStore.get(key);
-    
-    if (!entry || entry.resetTime < now) {
-      // First request or window expired
-      rateLimitStore.set(key, {
-        count: 1,
-        resetTime: now + windowMs,
-      });
+  const currentTime = Date.now();
+  const record = ipRequests.get(ip);
+
+  if (!record) {
+    ipRequests.set(ip, { count: 1, startTime: currentTime });
+  } else {
+    if (currentTime - record.startTime > RATE_LIMIT_WINDOW) {
+      // Reset window
+      ipRequests.set(ip, { count: 1, startTime: currentTime });
     } else {
-      // Increment count
-      entry.count++;
-      
-      if (entry.count > maxRequests) {
-        const retryAfter = Math.ceil((entry.resetTime - now) / 1000);
-        c.header("Retry-After", String(retryAfter));
+      if (record.count >= MAX_REQUESTS) {
         return c.json(
-          {
-            error: "Rate limit exceeded",
-            retryAfter,
-            limit: maxRequests,
-            window: `${windowMs / 1000}s`,
-          },
-          429
+          { success: false, error: { message: "Rate limit exceeded" } },
+          429,
         );
       }
+      record.count++;
     }
-    
-    // Add rate limit headers
-    const currentEntry = rateLimitStore.get(key)!;
-    c.header("X-RateLimit-Limit", String(maxRequests));
-    c.header("X-RateLimit-Remaining", String(Math.max(0, maxRequests - currentEntry.count)));
-    c.header("X-RateLimit-Reset", String(Math.ceil(currentEntry.resetTime / 1000)));
-    
-    await next();
-  };
-}
+  }
+
+  await next();
+};

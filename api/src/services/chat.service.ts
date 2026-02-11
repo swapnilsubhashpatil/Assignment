@@ -109,6 +109,8 @@ export class ChatService {
     );
     const recentMessages = allMessages.slice(-this.RECENT_MESSAGES_TO_KEEP);
 
+
+
     // Generate summary of old messages
     const summary = await this.summarizeMessages(oldMessages);
 

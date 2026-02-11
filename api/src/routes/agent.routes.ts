@@ -1,73 +1,73 @@
 import { Hono } from "hono";
 
-const router = new Hono();
+export const agentRoutes = new Hono();
 
-// List available agents
-router.get("/", (c) => {
-  return c.json({
-    agents: [
+const agentDefinitions: Record<
+  string,
+  { description: string; tools: { name: string; description: string }[] }
+> = {
+  support: {
+    description:
+      "Handles general support inquiries, FAQs, and troubleshooting",
+    tools: [
       {
-        type: "support",
-        name: "Support Agent",
-        description: "Handles general support inquiries, FAQs, and troubleshooting",
-        capabilities: [
-          "Answer product questions",
-          "Provide troubleshooting steps",
-          "Check conversation history",
-          "Explain company policies",
-        ],
-      },
-      {
-        type: "order",
-        name: "Order Agent",
-        description: "Handles order status, tracking, and modifications",
-        capabilities: [
-          "Check order details",
-          "Track delivery status",
-          "Provide shipping updates",
-          "Help with order modifications",
-        ],
-      },
-      {
-        type: "billing",
-        name: "Billing Agent",
-        description: "Handles payment issues, refunds, and invoices",
-        capabilities: [
-          "Retrieve invoice details",
-          "Check refund status",
-          "Explain billing charges",
-          "Help with payment issues",
-        ],
+        name: "queryConversationHistory",
+        description: "Fetches past conversation history for the current user",
       },
     ],
-  });
-});
+  },
+  order: {
+    description:
+      "Handles order status, tracking, modifications, and cancellations",
+    tools: [
+      {
+        name: "fetchOrderDetails",
+        description:
+          "Fetches details of an order by order number or for the current user",
+      },
+      {
+        name: "checkDeliveryStatus",
+        description: "Checks delivery status and tracking for an order",
+      },
+    ],
+  },
+  billing: {
+    description:
+      "Handles payment issues, refunds, invoices, and subscription queries",
+    tools: [
+      {
+        name: "getInvoiceDetails",
+        description: "Fetches invoice details by invoice number",
+      },
+      {
+        name: "checkRefundStatus",
+        description: "Checks status of a refund by transaction ID",
+      },
+    ],
+  },
+};
 
-// Get specific agent capabilities
-router.get("/:type/capabilities", (c) => {
+agentRoutes.get("/", (c) =>
+  c.json({
+    agents: Object.entries(agentDefinitions).map(([type, def]) => ({
+      type,
+      description: def.description,
+      toolCount: def.tools.length,
+    })),
+  }),
+);
+
+agentRoutes.get("/:type/capabilities", (c) => {
   const type = c.req.param("type");
-  
-  const capabilities: Record<string, any> = {
-    support: {
-      tools: ["queryConversationHistory"],
-      topics: ["FAQs", "Troubleshooting", "Account Help", "General Inquiries"],
-    },
-    order: {
-      tools: ["fetchOrderDetails", "checkDeliveryStatus"],
-      topics: ["Order Status", "Tracking", "Shipping", "Returns"],
-    },
-    billing: {
-      tools: ["getInvoiceDetails", "checkRefundStatus"],
-      topics: ["Payments", "Refunds", "Invoices", "Subscriptions"],
-    },
-  };
+  const agent = agentDefinitions[type];
 
-  const caps = capabilities[type];
-  if (!caps) {
-    return c.json({ error: "Agent type not found" }, 404);
+  if (!agent) {
+    return c.json({ error: `Agent type "${type}" not found` }, 404);
   }
 
-  return c.json({ agent: type, ...caps });
+  return c.json({
+    type,
+    description: agent.description,
+    capabilities: agent.tools,
+  });
 });
-
-export default router;

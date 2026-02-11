@@ -1,50 +1,42 @@
 import { prisma } from "../db/client.js";
 import { chatService } from "../services/chat.service.js";
 
-interface WorkflowInput {
-  conversationId: string;
-  agentType: string;
-  userId: string;
+export async function postChatProcessing(
+    conversationId: string,
+    agentType: string,
+    userId: string,
+) {
+    "use workflow";
+
+    await updateMetadata(conversationId, agentType);
+    await checkAndCompact(conversationId);
+    await logAnalytics(conversationId, agentType, userId);
+
+    return { conversationId, status: "processed" };
 }
 
-export async function postChatProcessing(input: WorkflowInput) {
-  const { conversationId, agentType, userId } = input;
-
-  console.log(`[Workflow] Processing chat for conversation ${conversationId}`);
-
-  try {
-    // Update conversation with agent type
+async function updateMetadata(conversationId: string, agentType: string) {
+    "use step";
     await prisma.conversation.update({
-      where: { id: conversationId },
-      data: {
-        agentType,
-        metadata: {
-          lastProcessedAt: new Date().toISOString(),
-          lastAgent: agentType,
-        },
-      },
+        where: { id: conversationId },
+        data: { agentType },
     });
+}
 
-    // Check if conversation needs compaction
-    const needsCompaction = await chatService.needsCompaction(conversationId);
-    if (needsCompaction) {
-      console.log(`[Workflow] Compacting conversation ${conversationId}`);
-      await chatService.compactConversation(conversationId);
+async function checkAndCompact(conversationId: string) {
+    "use step";
+    if (await chatService.needsCompaction(conversationId)) {
+        await chatService.compactConversation(conversationId);
     }
+}
 
-    // Log analytics
-    const conversation = await chatService.getConversation(conversationId);
-    if (conversation) {
-      console.log(`[Workflow] Conversation stats:`, {
-        messageCount: conversation.messages.length,
-        agentType,
-        userId,
-      });
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error(`[Workflow] Error:`, error);
-    return { success: false, error: String(error) };
-  }
+async function logAnalytics(
+    _conversationId: string,
+    _agentType: string,
+    _userId: string,
+) {
+    "use step";
+    void _conversationId;
+    void _agentType;
+    void _userId;
 }

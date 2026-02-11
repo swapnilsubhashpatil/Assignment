@@ -2,7 +2,6 @@ import { tool } from "ai";
 import { z } from "zod";
 import { prisma } from "../../db/client.js";
 
-// Support Agent Tools
 export const createQueryConversationHistoryTool = (userId: string) => tool({
   description: "Fetches past conversation history for the current user.",
   parameters: z.object({
@@ -12,7 +11,7 @@ export const createQueryConversationHistoryTool = (userId: string) => tool({
     const conversations = await prisma.conversation.findMany({
       where: {
         user: {
-          userId: userId
+          userId: userId // Using the User relation
         }
       },
       orderBy: { updatedAt: "desc" },
@@ -40,7 +39,7 @@ export const createQueryConversationHistoryTool = (userId: string) => tool({
   },
 });
 
-// Order Agent Tools
+// Order Tool Factories
 export const createFetchOrderDetailsTool = (userId: string) => tool({
   description: "Fetches details of an order by order number or for the current user.",
   parameters: z.object({
@@ -103,7 +102,7 @@ export const createCheckDeliveryStatusTool = (userId: string) => tool({
       where: {
         orderNumber,
         user: {
-          userId: userId
+          userId: userId // Using the User relation
         }
       },
       select: {
@@ -123,7 +122,7 @@ export const createCheckDeliveryStatusTool = (userId: string) => tool({
   },
 });
 
-// Billing Agent Tools
+// Billing Tool Factories
 export const createGetInvoiceDetailsTool = (userId: string) => tool({
   description: "Fetches invoice details.",
   parameters: z.object({
@@ -135,7 +134,7 @@ export const createGetInvoiceDetailsTool = (userId: string) => tool({
         invoiceNumber,
         payment: {
           user: {
-            userId: userId
+            userId: userId // Using the User relation
           }
         },
       },
@@ -173,7 +172,7 @@ export const createCheckRefundStatusTool = (userId: string) => tool({
       where: {
         transactionId,
         user: {
-          userId: userId
+          userId: userId // Using the User relation
         }
       },
       include: {

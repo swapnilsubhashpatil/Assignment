@@ -84,7 +84,7 @@ export const chatController = {
       agent,
       history,
       currentConversationId!,
-      userId,
+      userId, // Pass userId for data isolation
       reasoning,
     );
 
