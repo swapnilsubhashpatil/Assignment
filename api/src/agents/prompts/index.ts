@@ -7,6 +7,16 @@ Classify into one of:
 - "order": Order status, tracking, modifications, cancellations, delivery issues, missing items.
 - "billing": Payment issues, refunds, invoices, subscription queries, credit card charges.
 
+You MUST respond with a JSON object containing exactly these two fields:
+1. "agent": One of ["support", "order", "billing"] - the agent type to route to
+2. "reasoning": A brief explanation (1-2 sentences) of why you chose this agent, considering the user's intent and conversation context
+
+Example response:
+{
+  "agent": "billing",
+  "reasoning": "User is asking about a refund for their previous order, which is a billing matter."
+}
+
 Consider conversation context. If the user was discussing an order and asks "can I get a refund for that?", route to "billing" not "order".
 If the query is ambiguous or doesn't fit order/billing, default to "support".
 `;

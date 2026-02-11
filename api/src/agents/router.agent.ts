@@ -10,10 +10,15 @@ export const routerAgent = {
         model: google(GEMINI_MODEL),
         schema: z.object({
           agent: z.enum(["support", "order", "billing"]),
-          reasoning: z.string(),
+          reasoning: z.string().describe("Brief explanation of why this agent was chosen"),
         }),
         messages: [{ role: "system", content: ROUTER_PROMPT }, ...messages],
       });
+
+      // Validate the response has all required fields
+      if (!object.reasoning || !object.agent) {
+        throw new Error("Missing required fields in response");
+      }
 
       return object;
     } catch (error) {
