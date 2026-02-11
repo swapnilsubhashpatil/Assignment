@@ -227,7 +227,8 @@ export const createCheckRefundStatusTool = (userId: string) => tool({
 
       // Find payment with matching product in items
       const matchingPayment = payments.find(p => {
-        const items = JSON.parse(p.order.items || "[]");
+        const itemsStr = p.order.items as string | null;
+        const items = JSON.parse(itemsStr || "[]");
         return items.some((item: any) => 
           item.name?.toLowerCase().includes(productName.toLowerCase())
         );
