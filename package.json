@@ -1,0 +1,28 @@
+{
+  "name": "customer-support-monorepo",
+  "private": true,
+  "workspaces": [
+    "web",
+    "api"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "studio": "cd api && npx prisma studio",
+    "workflow": "npx workflow web"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "turbo": "^2.8.5",
+    "typescript": "^5.3.3"
+  },
+  "packageManager": "npm@10.2.4",
+  "overrides": {
+    "inflight": "^2.0.0",
+    "rimraf": "^6.0.1",
+    "glob": "^11.0.0"
+  }
+}
