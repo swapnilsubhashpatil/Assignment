@@ -6,7 +6,6 @@ import { ROUTER_PROMPT } from "./prompts/index.js";
 export const routerAgent = {
   classify: async (messages: any[]) => {
     try {
-
       const { object } = await generateObject({
         model: google(GEMINI_MODEL),
         schema: z.object({
@@ -17,7 +16,8 @@ export const routerAgent = {
       });
 
       return object;
-    } catch {
+    } catch (error) {
+      console.error("Router agent error:", error);
       return { agent: "support", reasoning: "Fallback due to router error" };
     }
   },

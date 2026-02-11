@@ -4,6 +4,15 @@ import { app } from "./app.js";
 
 const port = Number(process.env.PORT) || 3001;
 
+// Validate required environment variables
+if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    console.error("❌ GOOGLE_GENERATIVE_AI_API_KEY is not set!");
+    console.error("   Please set this environment variable in your deployment.");
+}
+if (!process.env.DATABASE_URL) {
+    console.error("❌ DATABASE_URL is not set!");
+}
+
 const server = serve({
     fetch: app.fetch,
     port,
