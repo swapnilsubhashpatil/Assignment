@@ -5,6 +5,8 @@ import { chatService } from "../services/chat.service.js";
 import { routerAgent } from "../agents/router.agent.js";
 import { agentService } from "../services/agent.service.js";
 import type { CoreMessage } from "ai";
+import { start } from "workflow/api";
+import { postChatProcessing } from "../workflows/post-chat-processing.js";
 
 async function validateUser(userId: string) {
   const user = await prisma.user.findUnique({
@@ -88,6 +90,8 @@ export const chatController = {
 
     response.headers.set("X-Agent-Type", agent);
     response.headers.set("X-Reasoning", reasoning.replace(/\n/g, " "));
+
+    start(postChatProcessing, [currentConversationId!, agent, userId]).catch(() => {});
 
     return response;
   },
